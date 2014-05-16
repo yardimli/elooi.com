@@ -1,0 +1,49 @@
+# $Id: .htaccess 27 2009-03-12 17:31:36Z joe.lencioni $
+# $Date: 2009-03-12 12:31:36 -0500 (Thu, 12 Mar 2009) $
+# $Revision: 27 $
+
+#php_value session.cookie_domain .elooi.com
+
+
+<IfModule mod_deflate.c>
+SetOutputFilter DEFLATE
+
+# Don’t compress
+SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png)$ no-gzip dont-vary
+SetEnvIfNoCase Request_URI \.(?:exe|t?gz|zip|bz2|sit|rar)$ no-gzip dont-vary
+</IfModule>
+
+
+#Dealing with proxy servers
+<IfModule mod_headers.c>
+Header append Vary User-Agent
+</IfModule> 
+
+
+
+<IfModule mod_rewrite.c>
+Options +FollowSymLinks 
+RewriteEngine On
+
+RewriteRule ^about$ /about.php [L,NC]
+RewriteRule ^contact$ /contact.php [L,NC]
+RewriteRule ^help$ /help.php [L,NC]
+RewriteRule ^dev$ /dev.php [L,NC]
+RewriteRule ^privacy$ /privacy.php [L,NC]
+RewriteRule ^terms$ /terms.php [L,NC]
+
+RewriteRule ^settings/account /my-elooi-settings-account.php [L,NC]
+RewriteRule ^settings/profile /my-elooi-settings-profile.php [L,NC]
+RewriteRule ^settings/design /my-elooi-settings-design.php [L,NC]
+RewriteRule ^settings/notifications /my-elooi-settings-notifications.php [L,NC]
+RewriteRule ^settings/password /my-elooi-settings-password.php [L,NC]
+
+RewriteRule ^password/reset /password-reset.php [L,NC]
+
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /lookup.php [L]
+
+</IfModule>
+

@@ -1,0 +1,190 @@
+<?php
+@session_start(); 
+    /**
+     * Created by PhpStorm.
+     * User: clops
+     * Date: 26.02.14
+     * Time: 10:52
+     */
+
+    class emMailer {
+
+        protected $format;
+        protected $htmlTemplate;
+
+
+        /**
+         * @param emFormat $format
+         */
+        public function __construct (emFormat $format) {
+            $this->format = $format;
+            $this->initHtmlTemplate();
+        }
+
+
+        /**
+         * @param emComment $comment
+         *
+         * @return bool
+         */
+        public function commentAdded (emComment $comment, $page) {
+            if ($this->format->getModeratorMail() and ($this->format->getModerateComments() or $this->format->getMailComments())) {
+                $text = '
+<p>Hi,<br />%sender% from %ip% just commented on your item "%object_id%":</p>
+<p style="padding: 20px;"><em>%comment_text%</em></p>
+%moderation_links%
+<p>Your CommentAnything Mailer</p>';
+
+                $text = str_replace(
+                    array('%sender%', '%ip%', '%object_id%', '%comment_text%', '%moderation_links%'),
+                    array($comment->getFormattedSenderName(), $comment->getSenderIP(), $comment->getObjectID(), $comment->getCommentText(), $this->getModerationLinks($comment, $page)),
+                    $text);
+
+                $subject = '[CommentAnything] New Comment: ' . $comment->getObjectID();
+
+                return $this->send($subject, $text);
+            }
+
+            return false;
+        }
+
+
+        /**
+         * @param emComment $comment
+         * @param           $page
+         *
+         * @return string
+         */
+        protected function getModerationLinks (emComment $comment, $page) {
+            $adminLink = null;
+            if (strpos($page, '?') !== false) {
+                $adminLink = $page . '&';
+            } else {
+                $adminLink = $page . '?';
+            }
+            $adminLink .= 'emCommentKey=' . $comment->getAccessKey() . '&emCommentID=' . $comment->getID() . '&emCommentOID=' . $comment->getObjectID();
+
+            $modText = '<ul>';
+            if ($this->format->getModerateComments()) {
+                $modText .= '<li><a href="' . $adminLink . '&emAct=allow">Click here to Allow</a></li>';
+            }
+            $modText .= '<li><a href="' . $adminLink . '&emAct=delete">Click here to Delete</a></li>';
+            $modText .= '</ul>';
+
+            return $modText;
+        }
+
+
+        /**
+         * @param      $subject
+         * @param      $text
+         * @param null $to
+         *
+         * @return bool
+         */
+        public function send ($subject, $text, $to = null) {
+            if (!isset($to)) {
+                $to = $this->format->getModeratorMail();
+            }
+
+            return $this->sendHTML($to, $subject, $text, $this->format->getMailFrom());
+        }
+
+
+        /**
+         * @param      $to
+         * @param      $subject
+         * @param      $html
+         * @param      $from
+         * @param null $replyto
+         *
+         * @return bool
+         */
+        public function sendHTML ($to, $subject, $html, $from, $replyto = null) {
+            //prepare empty var
+            $headers  = null;
+            $eol      = "\n";
+            $boundary = "commentanything-vh-".uniqid();
+
+            if (isset($from)) {
+                $headers .= 'From: ' . $from . $eol;
+                $headers .= 'Reply-To: ' . ($replyto ? $replyto : $from) . $eol;
+                $headers .= 'Return-Path: ' . $from . $eol;
+                $headers .= "X-Mailer: PHP v" . phpversion() . $eol;
+            }
+
+            // add text version
+            $headers .= 'MIME-Version: 1.0' . $eol;
+            $headers .= "Content-Type: multipart/mixed; boundary=\"" . $boundary . "\";" . $eol;
+
+            $message = '--' . $boundary . $eol;
+            $message .= 'Content-Type: text/html; charset="UTF-8"' . $eol;
+            $message .= 'Content-Transfer-Encoding: 7bit' . $eol . $eol;
+            $message .= str_replace(array('%%subject%%', '%%content%%'), array($subject, $html), $this->htmlTemplate) . $eol . $eol;
+
+            $message .= '--' . $boundary . '--' . $eol . $eol;
+
+            return @mail($to, "=?UTF-8?B?" . base64_encode($subject) . "?=", $message, $headers);
+        }
+
+
+        /**
+         *
+         */
+        private function initHtmlTemplate () {
+            $this->htmlTemplate = "<html>
+<head>
+    <style>
+        body{
+            padding:    10px;
+            margin:     5px;
+            background: #eee;
+            font-family: \"Lucida Grande\",\"Lucida Sans Unicode\",\"Lucida Sans\",Helvetica,Arial,sans-serif;
+            color:      #333;
+            font-size:  12px;
+            text-align: center;
+        }
+
+        h1{
+            color: #000;
+            font-size: 16px;
+            border-bottom: 1px solid #ccc;
+            padding: 0 0 5px 0;
+            margin: 0 0 20px 0;
+        }
+
+        .container{
+            background: #fff;
+            padding: 30px 30px 20px;
+            margin: 10px auto;
+            line-height: 20px;
+            -moz-border-radius: 15px;
+            border-radius: 15px;
+            text-align: left;
+            max-width: 640px;
+        }
+
+        .footer{
+            font-size: 10px;
+            text-align: center;
+        }
+
+        .footer a{
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class=\"container\">
+        <h1>%%subject%%</h1>
+        %%content%%
+    </div>
+    <div class=\"footer\">
+        <p>
+            Powered by <a href=\"http://clops.at/\" target=\"_blank\">Comment Anything</a> &copy; 2009-" . date('Y') . "
+        </p>
+    </div>
+</body>
+</html>";
+        }
+    }

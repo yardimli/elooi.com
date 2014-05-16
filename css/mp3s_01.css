@@ -1,0 +1,441 @@
+@charset "UTF-8";
+/* CSS Document */
+
+#mp3content {
+	font-family: "Lucida Grande", "Trebuchet MS", Verdana, sans-serif;
+	width: 660px;
+	font-size: 13px;
+	line-height: 1.6em;
+	color: #444;
+	float: left;
+	margin-top: 30px;
+	margin-left: 12px;
+	clear: left;
+}
+
+.mp3_stripe {
+	background-color: #FFF;
+	padding: 4px;
+	display: block;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: #Eaeaea;
+	height: auto;
+}
+
+.mp3_stripe2 {
+	background-color: #FFF;
+	padding: 4px;
+	display: block;
+	width: 660px;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: #Eaeaea;
+	height: auto;
+}
+
+.mp3_stripe .text {
+	text-align: left;
+	left: 4px;
+	float: left;
+	margin-left: 4px;
+	width: 520px;
+	line-height: 1.5em;
+	margin-top: 0px;
+	padding-left: 20px;
+}
+
+.mp3_stripe2 .text {
+	text-align: left;
+	left: 4px;
+	float: left;
+	margin-left: 4px;
+	width: 520px;
+	line-height: 1.5em;
+	margin-top: 0px;
+	padding-left: 20px;
+}
+
+.mp3_stripe .textmusic {
+	text-align: left;
+	left: 4px;
+	float: left;
+	margin-left: 4px;
+	width: 520px;
+	line-height: 1.5em;
+	margin-top: 2px;
+	background-image: url(http://www.spectrasonics.info/sitegraphs/ic-mp3-music.jpg);
+	background-repeat: no-repeat;
+	padding-left: 25px;
+	background-position: left center;
+}
+
+.mp3_stripe2 .textmusic {
+	text-align: left;
+	left: 4px;
+	float: left;
+	margin-left: 4px;
+	width: 520px;
+	line-height: 1.5em;
+	margin-top: 2px;
+	background-image: url(http://www.spectrasonics.info/sitegraphs/ic-mp3-music.jpg);
+	background-repeat: no-repeat;
+	padding-left: 25px;
+	background-position: left center;
+}
+
+.mp3_stripe .textsound {
+	text-align: left;
+	left: 4px;
+	float: left;
+	margin-left: 4px;
+	width: 520px;
+	line-height: 1.5em;
+	margin-top: 2px;
+	background-image: url(../sitegraphs/ic-mp3-sound.jpg);
+	background-repeat: no-repeat;
+	padding-left: 25px;
+	background-position: left center;
+}
+
+.mp3_stripe2 .textsound {
+	text-align: left;
+	left: 4px;
+	float: left;
+	margin-left: 4px;
+	width: 520px;
+	line-height: 1.5em;
+	margin-top: 2px;
+	background-image: url(../sitegraphs/ic-mp3-sound.jpg);
+	background-repeat: no-repeat;
+	padding-left: 25px;
+	background-position: left center;
+}
+
+.mp3_stripe .buttons {
+	text-align: center;
+	left: 4px;
+	float: right;
+	margin-left: 15px;
+	width: 46px;
+	line-height: 1em;
+	font-size: 11px;
+	margin-top: 1px;
+}
+
+.mp3_stripe2 .buttons {
+	text-align: center;
+	left: 4px;
+	float: right;
+	margin-left: 15px;
+	width: 46px;
+	line-height: 1em;
+	font-size: 11px;
+	margin-top: 1px;
+}
+
+.mp3_stripe a.name {
+	font-size:12px;
+	color: #333;
+}
+
+.mp3_stripe2 a.name {
+	font-size:12px;
+	color: #333;
+}
+
+.mp3_stripe a:hover.name {
+	color: #06C;
+	text-decoration: underline;
+}
+
+.mp3_stripe2 a:hover.name {
+	color: #06C;
+	text-decoration: underline;
+}
+
+.mp3_stripe a:hover {
+	text-decoration: underline;
+}
+
+.mp3_stripe2 a:hover {
+	text-decoration: underline;
+}
+
+
+.mp3_stripe .image {
+	float: left;
+	padding: 1px;
+	margin-left: 7px;
+	border: 1px solid #ddd;
+}
+
+.mp3_stripe2 .image {
+	float: left;
+	padding: 1px;
+	margin-left: 7px;
+	border: 1px solid #ddd;
+}
+
+.mp3_stripe .composer {
+	font-size: 10px;
+	color: #888;
+	font-weight: normal;
+	font-style: normal;
+}
+
+.mp3_stripe2 .composer {
+	font-size: 10px;
+	color: #888;
+	font-weight: normal;
+	font-style: normal;
+}
+
+.mp3_stripe .composer a {
+	font-size: 10px;
+	color: #808080;
+	font-weight: normal;
+
+}
+
+.mp3_stripe2 .composer a {
+	font-size: 10px;
+	color: #808080;
+	font-weight: normal;
+
+}
+
+.mp3_stripe .description {
+	display: none;
+	height: auto;
+	width: 550px;
+	text-align: left;
+	font-size: 11px;
+	color: #666;
+	line-height: 1.5em;
+	padding-left: 29px;
+	padding-top: 0px;
+	/* [disabled]margin-top: -1px; */
+}
+
+.mp3_stripe2 .description {
+	display: none;
+	height: auto;
+	width: 550px;
+	text-align: left;
+	font-size: 11px;
+	color: #666;
+	line-height: 1.5em;
+	padding-left: 29px;
+	padding-top: 0px;
+	/* [disabled]margin-top: -1px; */
+}
+
+.mp3_stripe .genre {
+	position: relative;
+	width: 200px;
+	text-align: left;
+	font-size: 10px;
+	color: #888;
+	font-style: normal;
+}
+
+.mp3_stripe2 .genre {
+	position: relative;
+	width: 200px;
+	text-align: left;
+	font-size: 10px;
+	color: #888;
+	font-style: normal;
+}
+
+.mp3_stripe .type {
+	text-align: left;
+	font-size: 9px;
+	color: #5599C0;
+	font-style: normal;
+	margin-left: 10px;
+	position: relative;
+	width: 75px;
+}
+
+.mp3_stripe2 .type {
+	text-align: left;
+	font-size: 9px;
+	color: #5599C0;
+	font-style: normal;
+	margin-left: 10px;
+	position: relative;
+	width: 75px;
+}
+
+.mp3_stripe .toggle {
+	padding-top: 6px;
+}
+
+.mp3_stripe2 .toggle {
+	padding-top: 6px;
+}
+
+.mp3stripe-h2 {
+	text-align: center;
+	padding: 3px;
+	border: 1px solid #ddd;
+	background-color: #eee;
+	margin-top: 16px;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-size: 11px;
+	margin-bottom: 8px;
+	color: #333;
+	-webkit-border-top-right-radius: 8px;
+	-webkit-border-top-left-radius: 8px;
+	-moz-border-radius-topright: 8px;
+	-moz-border-radius-topleft: 8px;
+}
+
+.mp3stripe2-h2 {
+	text-align: center;
+	padding: 3px;
+	border: 1px solid #ddd;
+	background-color: #eee;
+	margin-top: 16px;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-size: 11px;
+	margin-bottom: 8px;
+	color: #333;
+	-webkit-border-top-right-radius: 8px;
+	-webkit-border-top-left-radius: 8px;
+	-moz-border-radius-topright: 8px;
+	-moz-border-radius-topleft: 8px;
+}
+
+.audio_filter_bar {
+	text-align: left;
+	padding: 8px;
+	font-size: 11px;
+	font-weight: bold;
+	background-color: #eeeeee;
+	-webkit-border-top-right-radius: 8px;
+	-webkit-border-top-left-radius: 8px;
+	-moz-border-radius-topright: 8px;
+	-moz-border-radius-topleft: 8px;
+	border-bottom-width: 0px;
+	border-bottom-style: solid;
+	border-bottom-color: #fff;
+	position: relative;
+	height: 21px;
+}
+
+.audio_filter_bar input {
+    font-size: 12px;	
+}
+
+.audio_play_bar {
+	text-align: center;
+	padding: 6px;
+	font-size: 11px;
+	font-weight: bold;
+	background-color: #eeeeee;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: #ccc;
+	position: relative;
+	height: 22px;
+}
+
+.audio_sort_bar {
+	font-size: 11px;
+	height: 20px;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: #FFF;
+	text-align: left;
+	padding-top: 2px;
+	padding-right: 10px;
+	padding-bottom: 2px;
+	padding-left: 8px;
+	background-color: #F1F1F1;
+}
+.audio_sort_bar a {
+	color: #06C;
+	font-weight: normal;
+}
+.audio_page_bar {
+	text-align: center;
+	padding: 8px;
+	font-size: 11px;
+	font-weight: bold;
+	background-color: #eee;
+	-webkit-border-bottom-right-radius: 8px;
+	-webkit-border-bottom-left-radius: 8px;
+	-moz-border-radius-bottomright: 8px;
+	-moz-border-radius-bottomleft: 8px;
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: #ccc;
+	margin-top: 0px;
+}
+.audio_page_bar a{
+	text-align: center;
+	font-size: 11px;
+	font-weight: bold;
+	background-color: #FFF;
+	border: 1px solid #AAA;
+	margin-right: 5px;
+	margin-left: 5px;
+	padding-top: 2px;
+	padding-right: 5px;
+	padding-bottom: 2px;
+	padding-left: 5px;
+}
+.audio_page_bar a:hover {
+	background-color: #6CF;
+}
+
+/*AUDIO PAGER*/
+.audio-searchresults-pager {
+	background-color: #eeeeee;
+	width: 660px;
+	margin-bottom: 22px;
+	margin-top: 0px;
+	padding: 6px;
+	border: 0px solid #ddd;
+	font-size: 11px;
+	text-align: center;
+	-webkit-border-bottom-right-radius: 4px;
+	-webkit-border-bottom-left-radius: 4px;
+	-moz-border-radius-bottomright: 4px;
+	-moz-border-radius-bottomleft: 4px;
+}
+.audio-searchresults-pager a{
+	color: #4091C6;
+	font-weight: normal;
+}
+.audio-searchresults-pager a:hover{
+	text-decoration: underline;
+}
+.audio-searchresults-pager .inactive{
+	color: #aaa;
+}
+.audio-offline {
+	color: #F00;
+	font-size: 10px;
+	font-weight: normal;
+}
+
+
+.mp3_stripe .music_type_general {
+	text-align: left;
+	left: 4px;
+	float: left;
+	margin-left: 4px;
+	width: 520px;
+	line-height: 1.5em;
+	margin-top: 2px;
+	background-image: url(/data/Audio/TypeImage/ic-mp3-music.jpg);
+	background-repeat: no-repeat;
+	padding-left: 25px;
+	background-position: left center;
+}

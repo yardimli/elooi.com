@@ -1,0 +1,200 @@
+<?php
+
+    /* -- DATABASE ACCESS PARAMETERS, PLEASE EDIT -- */
+    $DB_HOST    = 'localhost';
+    $DB_USER    = 'root';
+    $DB_PASS    = 'Mantik77';
+    $DB_NAME    = 'cloudofvoice';
+
+########################################################################################################################################################################
+
+    /* -- Some UI Settings, edit as you wish -- */
+    //how to format dates
+    $DATEFORMAT = '%c'; //see http://at2.php.net/manual/en/function.strftime.php for other possibilities
+
+    //when to hide comments under SHOW MORE (show X comments, hide others)
+    $CCOUNT     = 2;
+
+    //Name Input Field Visible?
+    $SHOWNAME   = false;
+
+    //eMail Input Field Visible?
+    $SHOWMAIL   = false;
+    
+    //allow "liking" of comments?
+    $ALLOWLIKE  = true;
+
+    //allow "disliking" of comments?
+    $ALLOWDISLIKE  = true;
+
+    //allow reply to comments
+    $ALLOWREPLY = true;
+
+    //max depth of replies (visual)
+    $REPLYDEPTH = 5;
+
+    //how to sort comments, 1 for Ascending order (newest on bottom), -1 for descending order (newest on top)
+	//when using newest on top, then tree-based comments will NOT work
+    $CSORT = 1;
+
+    //enable tags (list tags you wish to enable eg 'IMG,A,B,SPAN')?
+    $ENABLETAGS = '';
+    
+    
+    
+    //comment moderator email
+    $MODMAIL    = 'moderator@domain.com';
+    
+    //moderate comments? (will also send them via email)
+    $MODCOM     = false;
+    
+    //email all new comments to the email address above?
+    $MAILCOM    = false;
+
+    //the address from which new comments are sent from
+    $MAILFROM   = 'emcomments@clops.at';
+
+
+
+
+	$lang =array();
+    /* -- Language Settings -- */
+    $lang["view"]           = "View all";
+    $lang['view2']          = 'comments';
+    $lang['name']           = 'Name';
+    $lang['enterName']      = 'Enter your name';
+    $lang['mail']           = 'eMail';
+    $lang['enterMail']      = 'Enter youe eMail address';
+    $lang['enterComment']   = 'Add a Comment';
+    $lang['enterReply']     = 'Reply to this Comment';
+    $lang['comment']        = 'Comment';
+    $lang['hide']           = 'Hide all';
+    $lang['reply']          = 'Reply';
+    
+    $lang['ilike']          = 'Like';
+    $lang['idislike']       = 'Dislike';
+    $lang['youlikethis']    = 'You like this';
+    $lang['youdislikethis'] = 'You dislike this';
+    $lang['rating']         = 'Total';
+    $lang['youandone']      = 'You and 1 other person like this';
+    $lang['youandxx']       = 'You and XXX other people like this';
+    $lang['onelikes']       = '1 person likes this';
+    $lang['xxlikethis']     = 'XXX people like this';
+
+    $lang['dyouandone']     = 'You and 1 other person dislike this';
+    $lang['dyouandxx']      = 'You and XXX other people dislike this';
+    $lang['donelikes']      = '1 person dislikes this';
+    $lang['dxxlikethis']    = 'XXX people dislike this';
+
+
+    $lang['cid']            = 'The comment ID';
+    $lang['wassuc']         = 'was successfully';
+    $lang['deleted']        = 'deleted';
+    $lang['moderated']      = 'moderated';
+
+
+########################################################################################################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ####################################################################################################
+    /* ----- DO NOT EDIT BELOW THIS LINE ----- */
+    //open the actual DB connection
+    try{
+        $db = new PDO('mysql:host='.$DB_HOST.';dbname='.$DB_NAME,$DB_USER,$DB_PASS,array());
+        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $db->setAttribute(PDO::ATTR_CASE, PDO::CASE_LOWER);
+        $db->exec("SET NAMES 'utf8'");
+    }catch (exception $e){
+        header('Content-type: application/x-json');
+        echo json_encode(array('dberror' => $e->getMessage()));
+        exit;
+    }
+
+    //db setup if neccessary
+    $db->exec('CREATE TABLE IF NOT EXISTS em_comments(
+                    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    object_id VARCHAR(64) NOT NULL,
+
+                    created DATETIME NOT NULL,
+
+                    sender_name     VARCHAR(128),
+                    sender_mail     VARCHAR(128),
+                    sender_ip       BIGINT,
+
+                    comment_text    TEXT,
+                    admin_reply     ENUM(\'0\',\'1\') NOT NULL DEFAULT \'0\',
+
+					reply_to		INT UNSIGNED DEFAULT NULL,
+                    sort_order		INT UNSIGNED NOT NULL DEFAULT 1,
+                    level			SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+                    
+                    rating_cache    INT NOT NULL DEFAULT 0,
+                    access_key      VARCHAR(100),
+                    visible         ENUM(\'0\',\'1\') NOT NULL DEFAULT \'1\',
+
+                    PRIMARY KEY(id),
+                    KEY(object_id, sort_order)
+                ) COLLATE utf8_general_ci');
+    
+    $db->exec('CREATE TABLE IF NOT EXISTS em_likes(
+                    id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    comment_id  INT UNSIGNED NOT NULL,
+                    sender_ip   BIGINT NOT NULL,
+                    vote        ENUM(\'1\',\'-1\') NOT NULL DEFAULT \'1\',
+                    
+                    PRIMARY KEY(id),
+                    KEY(comment_id, sender_ip),
+                    KEY(comment_id, vote),
+                    KEY(sender_ip)
+                ) COLLATE utf8_general_ci');
+
+
+    // -- prepare formatter with config data ------------------------------
+    require_once(__DIR__.'/php/emFormat.class.php');
+
+    $format   = new emFormat($lang);
+    $format->setDateFormat($DATEFORMAT);
+    $format->setAllowLike($ALLOWLIKE);
+    $format->setAllowDislike($ALLOWDISLIKE);
+    $format->setVisibleComments($CCOUNT);
+    $format->setShowMail($SHOWMAIL);
+    $format->setShowName($SHOWNAME);
+    $format->setModeratorMail($MODMAIL);
+    $format->setModerateComments($MODCOM);
+    $format->setMailComments($MAILCOM);
+    $format->setMailFrom($MAILFROM);
+    $format->setSort($CSORT);
+    $format->setAllowReply($ALLOWREPLY);

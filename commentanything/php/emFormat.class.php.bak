@@ -1,0 +1,573 @@
+<?php
+
+    /**
+     * @author  Alexey Kulikov aka Clops
+     *          Comment Anything ReMake
+     *
+     * @since   2014
+     */
+    class emFormat {
+
+        protected $lang = array();
+        protected $dateFormat = '%c';
+        protected $visibleComments = 2;
+        protected $allowLike = true;
+        protected $allowDislike = true;
+        protected $showName = false;
+        protected $showMail = false;
+        protected $moderatorMail;
+        protected $moderateComments = false;
+        protected $mailComments = false;
+        protected $mailFrom = 'emcomments@clops.at';
+        protected $sort;
+        protected $reply = false;
+        protected $depth = 5;
+
+
+        /**
+         * @param array $lang
+         */
+        public function __construct (Array $lang) {
+            $this->lang = $lang;
+        }
+
+
+        /***
+         *  Get rid of all HTML in the input
+         ***/
+        public function cleanInput ($str) {
+            return nl2br(htmlspecialchars(strip_tags(trim(urldecode((string)$str)))));
+        }
+
+
+        /***
+         *  Make links clickable
+         ***/
+        public function twitterify ($ret) {
+            $ret = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\" target=\"_blank\" rel=\"nofollow\">\\2</a>", $ret);
+            $ret = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\" target=\"_blank\" rel=\"nofollow\">\\2</a>", $ret);
+            $ret = preg_replace("/@(\w+)/", "<a href=\"http://www.twitter.com/\\1\" target=\"_blank\" rel=\"nofollow\">@\\1</a>", $ret);
+            $ret = preg_replace("/#(\w+)/", "<a href=\"http://search.twitter.com/search?q=\\1\" target=\"_blank\" rel=\"nofollow\">#\\1</a>", $ret);
+
+            return $ret;
+        }
+
+
+        /**
+         * @param emComment $comment
+         * @param int       $counter
+         *
+         * @return string
+         */
+        public function renderOneComment (emComment $comment, $counter = 1, $forceHidden = false) {
+            $sender = '';
+            if ($comment->getSenderName()) {
+                if ($comment->getSenderMail()) {
+                    $sender = $this->jsEncode($comment->getSenderMail(), $comment->getSenderName());
+                }
+                $sender = '<span class="emSenderName">' . $sender . '</span>: ';
+            }
+
+            $hidden = '';
+            if ($comment->getThread() &&
+                (
+                    $this->getSort() == 1 && ($counter < ($comment->getThread()->count() - ($this->getVisibleComments() - 1))) //normal sorting, show only the last N comments
+                ) || (
+                    $this->getSort() == -1 && $counter > $this->getVisibleComments() //reverse sorting, show only the first N comments
+                )
+            ) {
+                $hidden = 'emHiddenComment emHiddenComment_' . $comment->getObjectID();
+            }
+
+            $replyLink = '';
+            if ($this->getAllowReply()) {
+                $replyLink .= ' &middot; ';
+                $replyLink .= '<a href="javascript:replyToThisComment(' . $comment->getID() . ', \'' . $comment->getObjectID() . '\')">' . $this->lang('reply') . '</a>';
+            }
+
+            return '<div class="emComment emComment_' . $comment->getObjectID() . ' ' . $hidden . '" id="comment_' . $comment->getID() . '" style="' . (($hidden || $forceHidden) ? 'display:none;' : '') . ' '.$comment->getLevel(true).'">
+                        <div class="emCommentImage">
+                            <img src="/slir/w36-h36-c1.1/' . $comment->getuserID() . '" />
+                        </div>
+                        <div class="emCommentText">
+                            ' . $sender . stripslashes($comment->getCommentText()) . '
+                        </div>
+                        <div class="emCommentInto">
+                            ' . $comment->getCreated() . '
+
+                            <span style="' . ($this->getAllowLike() || $this->getAllowDislike() ? '' : 'display:none;') . '">
+                                &middot;
+                                <span id="iLikeThis_' . $comment->getID() . '">
+                                    ' . $this->getLikeText($comment) . '
+                                </span>
+                            </span>
+
+                            ' . $replyLink . '
+                        </div>
+                    </div>';
+        }
+
+
+        /**
+         * @param emComment $comment
+         *
+         * @return mixed|string
+         */
+        protected function getLikeText (emComment $comment) {
+            //like dislike is disabled
+            if (!$this->getAllowLike() and !$this->getAllowDislike()) {
+                return '';
+            }
+
+            //you have already voted
+            if ($comment->getVote()) {
+                return $this->commentLikeText($comment->getRatingCache(), $comment->getVote());
+            }
+
+            //you have not voted, so here are your options
+            $likeText = '';
+            if ($this->getAllowLike()) {
+                $likeText .= '<a href="javascript:iLikeThisComment(' . $comment->getID() . ', 0)">' . $this->lang('ilike') . '</a>';
+            }
+
+            if ($this->getAllowDislike()) {
+                if ($this->getAllowLike()) {
+                    $likeText .= ' &middot; ';
+                }
+                $likeText .= '<a href="javascript:iLikeThisComment(' . $comment->getID() . ', 1)">' . $this->lang('idislike') . '</a>';
+            }
+
+            //but other people have voted, so here is the general rating
+            if ($comment->getRatingCache()) {
+                $statement = $this->commentLikeText($comment->getRatingCache(), false);
+                if ($statement) {
+                    $likeText .= ' &middot; ' . $statement;
+                }
+            }
+
+            return $likeText;
+        }
+
+
+        /***
+         *  Encode MailAddresses against Spam Bots
+         ***/
+        public function jsEncode ($address, $text) {
+            preg_match('!^(.*)(\?.*)$!', $address, $match);
+            if (!empty($match[2])) {
+                //$smarty->trigger_error("mailto: hex encoding does not work with extra attributes. Try javascript.");
+                return null;
+            }
+            $address_encode = '';
+            for ($x = 0; $x < strlen($address); $x++) {
+                if (preg_match('!\w!', $address[$x])) {
+                    $address_encode .= '%' . bin2hex($address[$x]);
+                } else {
+                    $address_encode .= $address[$x];
+                }
+            }
+            $text_encode = '';
+            for ($x = 0; $x < strlen($text); $x++) {
+                $text_encode .= '&#x' . bin2hex($text[$x]) . ';';
+            }
+
+            $mailto = "&#109;&#97;&#105;&#108;&#116;&#111;&#58;";
+
+            return '<a href="' . $mailto . $address_encode . '">' . $text_encode . '</a>';
+        }
+
+
+        /**
+         * @param $data
+         */
+        public function sendJSonReply ($data) {
+            header('Content-type: application/x-json');
+            $data = json_encode($data);
+            header('Content-length: ' . strlen($data));
+            echo $data;
+        }
+
+
+        /**
+         * @param $key
+         *
+         * @return string
+         */
+        public function lang ($key) {
+            return $this->lang[$key];
+        }
+
+
+        /***
+         *  Comment Like Text
+         ***/
+        public function commentLikeText ($total, $myVote = 0) {
+
+            $return = '';
+
+            //allow up and down
+            if ($this->getAllowDislike() and $this->getAllowLike()) {
+                if ($myVote != 0) {
+                    if ($myVote == 1) {
+                        $return .= $this->lang('youlikethis');
+                    }
+
+                    if ($myVote == -1) {
+                        $return .= $this->lang('youdislikethis');
+                    }
+
+                    if ($total > 1 || $total < -1) {
+                        $return .= ' &middot; ' . $this->lang('rating') . ' ' . ($total > 0 ? '+' . $total : $total);
+                    }
+                } else {
+                    $return .= $this->lang('rating') . ' ' . ($total > 0 ? '+' . $total : $total);
+                }
+
+                return $return;
+
+                //allow up only
+            } elseif ($this->getAllowLike()) {
+                if ($myVote) {
+                    $total = $total - 1;
+                    if ($total == 0) {
+                        return $this->lang['youlikethis'];
+                    } elseif ($total == 1) {
+                        return $this->lang['youandone'];
+                    } else {
+                        return str_replace('XXX', $total, $this->lang['youandxx']);
+                    }
+                } else {
+                    if ($total == 1) {
+                        return $this->lang['onelikes'];
+                    } else {
+                        return str_replace('XXX', $total, $this->lang['xxlikethis']);
+                    }
+                }
+
+                //allow down only
+            } elseif ($this->getAllowDislike()) {
+                $total = abs($total);
+                if ($myVote) {
+                    $total = $total - 1;
+                    if ($total == 0) {
+                        return $this->lang['youdislikethis'];
+                    } elseif ($total == 1) {
+                        return $this->lang['dyouandone'];
+                    } else {
+                        return str_replace('XXX', $total, $this->lang['dyouandxx']);
+                    }
+                } else {
+                    if ($total == 1) {
+                        return $this->lang['donelikes'];
+                    } else {
+                        return str_replace('XXX', $total, $this->lang['dxxlikethis']);
+                    }
+                }
+            }
+
+            return '';
+        }
+
+
+        /**
+         * @return int
+         */
+        public function getVisibleComments () {
+            return $this->visibleComments;
+        }
+
+
+        /**
+         * @param $number
+         */
+        public function setVisibleComments ($number) {
+            $this->visibleComments = (int)$number;
+        }
+
+
+        /***
+         *  Prepare a Gravatar String
+         ***/
+        public function gravatar ($email, $absolute = true) {
+	        $dir = str_replace(array('/commentanything/ajax/loadComments.php', '/commentanything/ajax/addComment.php'), '', $_SERVER['REQUEST_URI']);
+	        return md5(strtolower(trim($email))) . '?s=32&d=' . urlencode('http://' . $_SERVER['HTTP_HOST'] . $dir . '/commentanything/css/images/default.gif');
+        }
+
+
+        /**
+         * @return bool
+         */
+        public function getAllowLike () {
+            return $this->allowLike;
+        }
+
+
+        /**
+         * @param $allow
+         */
+        public function setAllowLike ($allow) {
+            $this->allowLike = (bool)$allow;
+        }
+
+
+        /**
+         * @return bool
+         */
+        public function getAllowDislike () {
+            return $this->allowDislike;
+        }
+
+
+        /**
+         * @param $allow
+         */
+        public function setAllowDislike ($allow) {
+            $this->allowDislike = (bool)$allow;
+        }
+
+
+        /**
+         * @param emComments $comments
+         *
+         * @return string
+         */
+        public function renderCommentThreadHeader (emComments $comments) {
+            if ($comments->count() > $this->getVisibleComments()) {
+                return '<div class="emShowAllComments" id="emShowAllComments_' . $comments->getObjectID() . '">
+                            <a href="javascript:viewAllComments(\'' . $comments->getObjectID() . '\');">' . $this->lang('view') . ' <span id="total_em_comments_' . $comments->getObjectID() . '">' . $comments->count() . '</span> ' . $this->lang('view2') . '</a> <noscript><em>This page needs JavaScript to display all comments</em></noscript>
+                          </div>
+                          <div class="emHideAllComments" id="emHideAllComments_' . $comments->getObjectID() . '" style="display: none;">
+                            <a href="javascript:hideAllComments(\'' . $comments->getObjectID() . '\');">' . $this->lang('hide') . ' <span id="total_em_comments_to_hide_' . $comments->getObjectID() . '">' . $comments->count() . '</span> ' . $this->lang('view2') . '</a>
+                          </div>';
+            }
+
+            return '';
+        }
+
+
+        /**
+         * @param $id
+         * @param $type
+         * @param $completed
+         *
+         * @return string
+         */
+        public function renderConfirmationDialog ($id, $type, $completed) {
+            $return = '';
+
+            if ($completed) {
+                $return .= '<div class="emInfoMessage">';
+                $return .= $this->lang('cid') . ' ' . (int)$id . ' ' . $this->lang('wassuc') . ' ' . ($type == 'delete' ? $this->lang('deleted') : $this->lang('moderated')) . '!';
+                $return .= '</div>';
+            }
+
+            return $return;
+        }
+
+
+        /**
+         * @param emComments $comments
+         *
+         * @return string
+         */
+        public function renderAddCommentForm (emComments $comments) {
+            return '<div id="emAddCommentHeader_' . $comments->getObjectID() . '">
+                    <div id="emAddComment_' . $comments->getObjectID() . '" class="emAddComment">
+                        <span ' . ($this->getShowName() ? '' : 'style="display: none;"') . ' id="emNameSpan_' . $comments->getObjectID() . '" class="emNameSpan">
+                            <label for="addEmName_' . $comments->getObjectID() . '">' . $this->lang('name') . ':</label>
+                            <input type="text" placeholder="' . $this->lang('enterName') . '" id="addEmName_' . $comments->getObjectID() . '" class="addEmName" name="sender_name" />
+                        </span>
+
+                        <span ' . ($this->getShowMail() ? '' : 'style="display: none;"') . ' id="emMailSpan_' . $comments->getObjectID() . '">
+                            <label for="addEmMail_' . $comments->getObjectID() . '">' . $this->lang('mail') . ':</label>
+                            <input type="text" placeholder="' . $this->lang('enterMail') . '" id="addEmMail_' . $comments->getObjectID() . '" class="addEmMail" name="sender_mail" />
+                        </span>
+
+                        <textarea placeholder="' . $this->lang('enterComment') . '" data-alt-value="' . $this->lang('enterReply') . '" id="addEmComment_' . $comments->getObjectID() . '" class="addEmComment" name="comment"></textarea>
+
+                        <input type="text"   name="email"     value="" id="addEmPot_' . $comments->getObjectID() . '" class="addEmPot" />
+                        <input type="hidden" name="object_id" value="' . $comments->getObjectID() . '" />
+                        <input type="hidden" name="reply_to"  value="" id="replyToEmPost_' . $comments->getObjectID() . '" />
+
+                        <span class="emButton">
+                            <input type="submit" class="emButton" id="emAddButton_' . $comments->getObjectID() . '" value="' . $this->lang('comment') . '" data-alt-value="' . $this->lang('reply') . '" onclick="addEMComment(\'' . $comments->getObjectID() . '\')" />
+                        </span>
+                    </div>
+                    </div>';
+        }
+
+
+        /**
+         * @return bool
+         */
+        public function getShowName () {
+            return $this->showName;
+        }
+
+
+        /**
+         * @param $show
+         */
+        public function setShowName ($show) {
+            $this->showName = (bool)$show;
+        }
+
+
+        /**
+         * @return bool
+         */
+        public function getShowMail () {
+            return $this->showMail;
+        }
+
+
+        /**
+         * @param $mail
+         */
+        public function setShowMail ($mail) {
+            $this->showMail = (bool)$mail;
+        }
+
+
+        /**
+         * @return mixed
+         */
+        public function getModeratorMail () {
+            return $this->moderatorMail;
+        }
+
+
+        /**
+         * @param $mail
+         */
+        public function setModeratorMail ($mail) {
+            $this->moderatorMail = (string)$mail;
+        }
+
+
+        /**
+         * @return bool
+         */
+        public function getModerateComments () {
+            return $this->moderateComments;
+        }
+
+
+        /**
+         * @param $moderate
+         */
+        public function setModerateComments ($moderate) {
+            $this->moderateComments = (bool)$moderate;
+        }
+
+
+        /**
+         * @return bool
+         */
+        public function getMailComments () {
+            return $this->mailComments;
+        }
+
+
+        /**
+         * @param $mail
+         */
+        public function setMailComments ($mail) {
+            $this->mailComments = (bool)$mail;
+        }
+
+
+        /**
+         * @return string
+         */
+        public function getMailFrom () {
+            return $this->mailFrom;
+        }
+
+
+        /**
+         * @param $from
+         */
+        public function setMailFrom ($from) {
+            $this->mailFrom = (string)$from;
+        }
+
+
+        /**
+         * @return string
+         */
+        public function getSort ($forSql = false) {
+            if ($forSql) {
+                if ($this->sort == 1) {
+                    return '';
+                }
+
+                return 'DESC';
+            }
+
+            return $this->sort;
+        }
+
+
+        /**
+         * @param $sort
+         */
+        public function setSort ($sort) {
+            if ($sort != -1) {
+                $sort = 1;
+            }
+            $this->sort = $sort;
+        }
+
+
+        /**
+         * @return string
+         */
+        public function getDateFormat () {
+            return $this->dateFormat;
+        }
+
+
+        /**
+         * @param $format
+         */
+        public function setDateFormat ($format) {
+            $this->dateFormat = $format;
+        }
+
+
+        /**
+         * @return string
+         */
+        public function getAllowReply () {
+            return $this->reply;
+        }
+
+
+        /**
+         * @param $from
+         */
+        public function setAllowReply ($allow) {
+            $this->reply = (bool)$allow;
+        }
+
+
+        /**
+         * @return string
+         */
+        public function getReplyDepth () {
+            return $this->depth;
+        }
+
+
+        /**
+         * @param $from
+         */
+        public function setReplyDepth ($depth) {
+            if ($depth < 1) {
+                $depth = 1;
+            }
+            $this->depth = (int)$depth;
+        }
+    }
+

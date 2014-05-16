@@ -1,0 +1,38 @@
+<?php
+$some_name = session_name("elooicom");
+
+session_set_cookie_params ( 0 , '/', '.elooi.com');
+@session_start(); 
+
+    /**
+     * @author  Alexey Kulikov aka Clops
+     *          Comment Anything ReMake
+     *
+     * @since   2014
+     */
+
+    require_once(__DIR__.'/../config.inc.php'); /** @var array $lang */
+    require_once(__DIR__.'/../php/emComment.class.php');
+
+	if ($_SESSION['Elooi_User']==true)
+	{
+		
+		$comment = new emComment($db, $format, $_REQUEST['comment_id']);
+		$data    = '';
+
+		if($comment->getID()){
+			$comment->like($_SERVER['REMOTE_ADDR'], (bool)$_REQUEST['dislike']);
+			$format->sendJSonReply(array(
+										'text'  => $format->commentLikeText($comment->getRatingCache(), $comment->getVote()),
+										'total' => $comment->getRatingCache()
+								   ));
+		}
+	} else
+	{
+		$format->sendJSonReply(array(
+									'text'  => "please, sign in to vote",
+									'total' => "0"
+							   ));
+	}
+	
+	

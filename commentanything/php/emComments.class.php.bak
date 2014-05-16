@@ -1,0 +1,162 @@
+<?php
+    /**
+     * @author  Alexey Kulikov aka Clops
+     *          Comment Anything ReMake
+     *
+     * @since   2014
+     */
+
+    class emComments implements Iterator, Countable {
+
+        /**
+         * @var PDO $db
+         */
+        protected $db;
+        /**
+         * @var emFormat $formatter
+         */
+        protected $formatter;
+        protected $objectID;
+        protected $comments = Array();
+        protected $valid = false;
+
+        //cache
+        protected $total;
+
+
+        /**
+         * @param PDO $db
+         * @param int $id
+         */
+        public function __construct (PDO $db, emFormat $formatter, $objectID = null) {
+            $this->setDb($db);
+            $this->setFormatter($formatter);
+            if (isset($objectID)) {
+                $this->init($objectID);
+            }
+        }
+
+
+        /**
+         * @param PDO $db
+         */
+        public function setDb (PDO $db) {
+            $this->db = $db;
+        }
+
+
+        /**
+         * @param emFormat $format
+         */
+        public function setFormatter (emFormat $format) {
+            $this->formatter = $format;
+        }
+
+
+        /**
+         * @param $id
+         */
+        public function init ($id) {
+            $this->setObjectID($id);
+            if ($data = $this->db->query("SELECT
+                                            em_comments.*,
+                                            em_likes.vote
+                                          FROM em_comments
+                                          LEFT JOIN em_likes ON em_comments.id = em_likes.comment_id AND em_likes.sender_ip = " . ip2long($_SERVER['REMOTE_ADDR']) . "
+                                          WHERE
+                                            object_id = " . $this->db->quote($this->getObjectID()) . " AND
+                                            visible = '1'
+                                          ORDER BY em_comments.sort_order ".$this->formatter->getSort(true) )->fetchAll()) {
+                foreach ($data as $row) {
+                    $comment = new emComment($this->db, $this->formatter);
+                    $comment->initFromArray($row);
+                    $this->push($comment);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+
+        /**
+         * @return string
+         */
+        public function getObjectID () {
+            return $this->objectID;
+        }
+
+
+        /**
+         * @param string $id
+         */
+        public function setObjectID ($id) {
+            $this->objectID = (string)$id;
+        }
+
+
+        /**
+         * @param emComment $comment
+         *
+         * @return int
+         */
+        protected function push (emComment $comment) {
+            $comment->setThread($this);
+
+            return array_push($this->comments, $comment);
+        }
+
+
+        /**
+         * @return string
+         */
+        public function getNewCommentHTML () {
+            return $this->formatter->renderAddCommentForm($this);
+        }
+
+
+        /* ----- SPL ITERATOR MAGIC BELOW ----- */
+
+
+        /**
+         * Return the array "pointer" to the first element
+         * PHP's reset() returns false if the array has no elements
+         */
+        public function rewind () {
+            $this->valid = (false !== reset($this->comments));
+        }
+
+
+        public function current () {
+            return current($this->comments);
+        }
+
+
+        public function key () {
+            return key($this->comments);
+        }
+
+
+        public function next () {
+            $this->valid = (false !== next($this->comments));
+        }
+
+
+        public function valid () {
+            return $this->valid;
+        }
+
+
+        /* ----- SPL ArrayAccess Magic Below ----- */
+
+
+        public function count () {
+            if (!isset($this->total)) {
+                $this->total = count($this->comments);
+            }
+
+            return $this->total;
+        }
+
+    }

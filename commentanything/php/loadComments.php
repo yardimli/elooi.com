@@ -1,0 +1,43 @@
+<?php
+@session_start(); 
+    /**
+     * @author  Alexey Kulikov aka Clops
+     *          Comment Anything ReMake
+     *
+     * @since   2014
+     */
+    if(!isset($object_id)){
+        die('You have NOT set an object ID for which to load comment for. Please define an $comments->getObjectID() = "XXX" variable on your page prior to including this script');
+    }
+
+    require_once(__DIR__.'/../config.inc.php'); /** @var array $lang */
+    require_once(__DIR__.'/emComment.class.php');
+    require_once(__DIR__.'/emComments.class.php');
+    require_once(__DIR__.'/emAdmin.class.php');
+
+
+    // -- prepare comment thread -------------------------------------------
+    $comments  = new emComments($db, $format);
+
+    $moderator = new emAdmin($db, $format);
+    $moderator->checkModerationAction($_GET);
+
+    $comments->init($object_id);
+
+
+    $header   = $format->renderConfirmationDialog($moderator->getRelatedID(), $moderator->getAction(), $moderator->getResult()).$format->renderCommentThreadHeader($comments);
+    $content  = '';
+    foreach($comments as $key => $comment){ /** @var emComment $comment */
+        $content .= $comment->getHTML($key+1);
+    }
+    $footer   = $comments->getNewCommentHTML();
+
+    // -- some basic output ------------------------------------------------
+    if($format->getSort() == -1){
+        $html = $footer.'<div id="emContent_'.$comments->getObjectID().'" class="emContent">'.$content.$header.'</div>';
+    }else{
+        $html = '<div id="emContent_'.$comments->getObjectID().'" class="emContent">'.$header.$content.'</div>'.$footer;
+    }
+
+    // -- send reply to client ---------------------------------------------
+    echo '<div id="'.$comments->getObjectID().'" class="emComments" object="'.$comments->getObjectID().'" class="ignorejsloader">'.$html.'</div>';
