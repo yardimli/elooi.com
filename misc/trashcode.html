@@ -1,9 +1,0 @@
-<div style="display:block; position:absolute; top:212px; background:#ccc; width:244px; border-bottom: 1px solid #e7e7e7; color: #777; height:32px; z-index:3;">
-					<div style="width:26px; float:left; margin-top:3px; overflow:hidden; height:26px; margin-left:3px; margin-right:4px; margin-bottom:2px;"><img src="/slir/w26-h26-c1.1/<?php echo mysql_result($sqlEloois,$j,"upicture"); ?>"></div>
-
-					<div style="display:block; margint-top:0px; font-size:11px;">
-						<b><a href="/u/<?php echo mysql_result($sqlEloois,$j,"username");?>/profil" onclick="javascript:event.stopPropagation();" id="span_username_<?php echo $arraycounter; ?>" style="font-size:11px; color:#444444;"><?php echo mysql_result($sqlEloois,$j,"username");?></a></b> - <?php echo mysql_result($sqlEloois,$j,"Location"); ?></span><br><span id="span_adddate_<?php echo $arraycounter; ?>" style="color:#555555; white-space: nowrap;"><?php 
-						echo datetotext( mysql_result($sqlEloois,$j,"ElooiTime") ); ?>&nbsp;&nbsp;</span>
-					</div>
-
-				</div>

@@ -1,4 +1,0 @@
-# Restrict max upload file size to 5 MB
-upload.maxsize=5MB
-upload.multiple_upload=true
-upload.extensions=gif,jpg,png
